@@ -317,10 +317,7 @@ def train_model():
 
     model = get_model(size, classes)
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
-    if classes == 8:
-        model.load_weights('results/recognizer/128_reduced_True_augmented_True_8cat/model.h5')
-    else:
-        model.load_weights('results/recognizer/128_reduced_True_augmented_False_7cat/model.h5')
+
     history = model.fit(
         train_set,
         class_weight=class_weights,
