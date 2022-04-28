@@ -437,15 +437,11 @@ python3 -m training_models.emotion_recognition_training -size 128 --classes 8 --
 ## Web App Production Pipeline
 
 Once the best weights have been identified, use the following steps to prepare to deploy the models. To skip the training steps, [go here](https://drive.google.com/file/d/13IPttGQbn06Upkdh51IBqjmLGve7ZFx8/view?usp=sharing) to download weights from my training, plus the face detection weights, and move them to the `public` folder of the web app.
-* First run the following code to prepare the models:
+* First run the following code to prepare the models for the web:
 ```bash
-python3 -m production_pipeline.convert_weights_to_saved_model
+python3 -m production_pipeline.convert_weights_to_js_model
 ```
 
-* Next, to convert the models to javascript for deployment on the web, run:
-```bash
-python3 -m production_pipeline.convert_models_to_js
-```
 
 * There are many options for running and hosting websites. For this project, I used Vue 3 as the framework for the app, and firebase for hosting. If you want to use Vue, start a project by following the steps [here]('https://cli.vuejs.org/guide/creating-a-project.html')
 
