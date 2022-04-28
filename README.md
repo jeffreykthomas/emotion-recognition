@@ -429,9 +429,9 @@ python3 -m training_models.emotion_recognition_training -size 128 --classes 8 --
 ```
 * The results I obtained from that training run are below, and accuracy of 62.15%, an additional 2% higher accuracy on the validation set, for a total of 5%, when compared to the original training run. This result is just slightly off the highest report of 62.425% (though I also filtered ambiguous images out of the validation set):
 
-![epoch history](results/recognizer/64_reduced_True_augmented_True_8cat/epoch_history.png "Epoch History")
+![epoch history](results/recognizer/128_reduced_True_augmented_True_8cat/epoch_history.png "Epoch History")
 ![epoch history](results/recognizer/128_reduced_True_augmented_True_8cat/confusion_matrix.png "Epoch History")
-![epoch history](results/recognizer/64_reduced_True_augmented_True_8cat/performance_dist.png "Epoch History")
+![epoch history](results/recognizer/128_reduced_True_augmented_True_8cat/performance_dist.png "Epoch History")
 ![epoch history](results/recognizer/128_reduced_True_augmented_True_8cat/example_faces.png "Epoch History")
 
 ## Web App Production Pipeline
