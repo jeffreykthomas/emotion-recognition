@@ -436,7 +436,7 @@ python3 -m training_models.emotion_recognition_training -size 128 --classes 8 --
 
 ## Web App Production Pipeline
 
-Once the best weights have been identified, use the following steps to prepare to deploy the models. To skip the training steps, [go here](https://google.com) to download weights from my training, plus the face detection weights, and located them in the 'public' folder of the web app.
+Once the best weights have been identified, use the following steps to prepare to deploy the models. To skip the training steps, [go here](https://drive.google.com/file/d/13IPttGQbn06Upkdh51IBqjmLGve7ZFx8/view?usp=sharing) to download weights from my training, plus the face detection weights, and move them to the `public` folder of the web app.
 * First run the following code to prepare the models:
 ```bash
 python3 -m production_pipeline.convert_weights_to_saved_model
