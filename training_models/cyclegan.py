@@ -653,11 +653,11 @@ def train_model():
         filepath=checkpoint_filepath,
         save_weights_only=True
     )
-    cycle_gan_model.load_weights('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/checkpoints/cyclegan_checkpoints_' + '036')
+    cycle_gan_model.load_weights('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/checkpoints/cyclegan_checkpoints_' + '193')
     cycle_gan_model.fit(
         tf.data.Dataset.zip((train_emotion1, train_emotion2)),
         epochs=1000,
-        initial_epoch=36,
+        initial_epoch=193,
         steps_per_epoch=num_train // batch_size,
         callbacks=[plotter, model_checkpoint_callback],
     )

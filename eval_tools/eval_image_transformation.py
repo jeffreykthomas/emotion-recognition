@@ -1,6 +1,6 @@
 # import the necessary packages
 import pandas as pd
-from tensorflow.keras.preprocessing.image.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from skimage.metrics import structural_similarity as ssim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,15 +8,16 @@ import cv2
 from training_models import cyclegan
 
 emotions = ['Anger', 'Contempt', 'Disgust', 'Fear', 'Happiness', 'Neutral', 'Sadness', 'Surprise']
+weight_file_root = '/Volumes/Pegasus_R4i/cycle_gan/128_weights/'
 weights = {
-    'anger to happiness': ('cycle_gan/weights/cyclegan_anger_happiness', 'G'),
-    'contempt to happiness': ('cycle_gan/weights/cyclegan_contempt_happiness', 'G'),
-    'disgust to happiness': ('cycle_gan/weights/cyclegan_disgust_happiness', 'G'),
-    'fear to happiness': ('cycle_gan/weights/cyclegan_fear_happiness', 'G'),
-    'neutral to surprise': ('cycle_gan/weights/cyclegan_surprise_neutral', 'F'),
-    'happiness to sadness': ('cycle_gan/weights/cyclegan_happiness_sadness_00', 'G'),
-    'sadness to happiness': ('cycle_gan/weights/cyclegan_happiness_sadness_01', 'F'),
-    'surprise to happiness': ('cycle_gan/weights/cyclegan_surprise_happiness', 'G')
+    'anger to happiness': (weight_file_root + 'anger_happiness/checkpoints/cyclegan_checkpoints_171', 'G'),
+    'contempt to happiness': (weight_file_root + 'contempt_happiness/checkpoints/cyclegan_checkpoints_004', 'G'),
+    'disgust to happiness': (weight_file_root + 'disgust_happiness/checkpoints/cyclegan_checkpoints_006', 'G'),
+    'fear to happiness': (weight_file_root + 'fear_happiness/checkpoints/cyclegan_checkpoints_004', 'G'),
+    'neutral to anger': (weight_file_root + 'anger_neutral/checkpoints/cyclegan_checkpoints_003', 'F'),
+    'happiness to neutral': (weight_file_root + 'neutral_happiness/checkpoints/cyclegan_checkpoints_003', 'F'),
+    'sadness to happiness': (weight_file_root + 'sadness_happiness/checkpoints/cyclegan_checkpoints_164', 'G'),
+    'surprise to neutral': (weight_file_root + 'neutral_surprise/checkpoints/cyclegan_checkpoints_001', 'F')
 }
 threshold = 85
 
@@ -63,10 +64,10 @@ def prep_fn(img):
 
 
 def prepare_dataset(emotion):
-    df_train = pd.read_pickle('../src/df_train.pkl')
+    df_train = pd.read_pickle('pickles/df_train.pkl')
     first_train_dataframe = df_train[df_train['y_col'] == emotion.capitalize()]
 
-    df_val = pd.read_pickle('../src/training_models/df_val.pkl')
+    df_val = pd.read_pickle('pickles/df_val.pkl')
     first_val_dataframe = df_val[df_val['y_col'] == emotion.capitalize()]
 
     first_train_datagen = ImageDataGenerator(
@@ -83,7 +84,7 @@ def prepare_dataset(emotion):
         first_train_dataframe,
         x_col='x_col',
         y_col='y_col',
-        target_size=(64, 64),
+        target_size=(128, 128),
         batch_size=256,
         color_mode='rgb',
         shuffle=False,
@@ -104,7 +105,7 @@ def prepare_dataset(emotion):
         first_val_dataframe,
         x_col='x_col',
         y_col='y_col',
-        target_size=(64, 64),
+        target_size=(128, 128),
         batch_size=256,
         color_mode='rgb',
         shuffle=False,
@@ -115,7 +116,7 @@ def prepare_dataset(emotion):
 
 
 def create_gan_model(weight, model):
-    gan_model, _, _ = cyclegan.get_model()
+    gan_model, _, _ = cyclegan.get_model(input_img_size=(128, 128, 3))
     gan_model.load_weights(weight).expect_partial()
     if model == 'G':
         return gan_model.gen_G
@@ -124,7 +125,10 @@ def create_gan_model(weight, model):
 
 
 def test_image_transformation():
-    results_array = []
+    df_train = pd.read_pickle('pickles/df_train.pkl')
+    df_train['ambiguous'] = False
+    df_val = pd.read_pickle('pickles/df_val.pkl')
+    df_val['ambiguous'] = False
     for (k, v) in weights.items():
         weight, model = v
         emotion = str(k).split(' ')[0]
@@ -136,8 +140,8 @@ def test_image_transformation():
             i = 1
             for img in generator:
                 if i > len(generator):
-                    df_results = pd.DataFrame(data=results_array, columns=['filename'])
-                    df_results.to_pickle('df_' + emotion.lower() + '_' + generator.filenames[0].split('/')[2].split('_')[0] + '_ambiguous_' + str(threshold) + '.pkl')
+                    df_train.to_pickle('pickles/image_eval/df_train_ambiguous_' + str(threshold) + '.pkl')
+                    df_val.to_pickle('pickles/image_eval/df_val_ambiguous_' + str(threshold) + '.pkl')
                     break
 
                 print('Making Predictions')
@@ -152,7 +156,9 @@ def test_image_transformation():
                     if s > (threshold / 100):
                         print('Adding image to array')
                         idx = (generator.batch_index - 1) * generator.batch_size
-                        results_array.append(generator.filenames[idx: idx + generator.batch_size or None][n])
+                        filename = generator.filenames[idx: idx + generator.batch_size or None][n]
+                        df_train.loc[df_train.x_col == filename, 'ambiguous'] = True
+                        df_val.loc[df_val.x_col == filename, 'ambiguous'] = True
                 i += 1
                 print(emotion + ', i: ' + str(i))
 

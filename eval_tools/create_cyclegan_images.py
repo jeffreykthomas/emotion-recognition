@@ -2,25 +2,26 @@ import training_models.cyclegan as cyclegan
 import numpy as np
 import pandas as pd
 import matplotlib
-import tensorflow as tf
+
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+weight_file_root = '/Volumes/Pegasus_R4i/cycle_gan/128_weights/'
 weights = {
-    'anger from neutral': ('/Volumes/Pegasus_R4i/cycle_gan/anger_neutral_64/checkpoints/cyclegan_checkpoints_180', 'F'),
-    'contempt from happiness': (
-        '/Volumes/Pegasus_R4i/cycle_gan/contempt_happiness_64/checkpoints/cyclegan_checkpoints_731', 'F'),
-    'disgust from happiness': (
-        '/Volumes/Pegasus_R4i/cycle_gan/disgust_happiness_64/checkpoints/cyclegan_checkpoints_721', 'F'),
-    'fear from happiness': ('/Volumes/Pegasus_R4i/cycle_gan/fear_happiness_64/checkpoints/cyclegan_checkpoints_981', 'F'),
-    'sadness from happiness': (
-        '/Volumes/Pegasus_R4i/cycle_gan/happiness_sadness_64/checkpoints/cyclegan_checkpoints_216', 'G'),
-    'surprise from neutral': (
-        '/Volumes/Pegasus_R4i/cycle_gan/surprise_neutral_64/checkpoints/cyclegan_checkpoints_176', 'F')
+    'anger from neutral': (weight_file_root + 'anger_neutral/checkpoints/cyclegan_checkpoints_003', 'F'),
+    'contempt from happiness': (weight_file_root + 'contempt_happiness/checkpoints/cyclegan_checkpoints_002', 'F'),
+    'disgust from happiness': (weight_file_root + 'disgust_happiness/checkpoints/cyclegan_checkpoints_007', 'F'),
+    'fear from happiness': (weight_file_root + 'fear_happiness/checkpoints/cyclegan_checkpoints_003', 'F'),
+    'happiness from sadness': (weight_file_root + 'sadness_happiness/checkpoints/cyclegan_checkpoints_164', 'G'),
+    'neutral from anger': (weight_file_root + 'anger_neutral/checkpoints/cyclegan_checkpoints_002', 'G'),
+    'sadness from happiness': (weight_file_root + 'sadness_happiness/checkpoints/cyclegan_checkpoints_233', 'F'),
+    'surprise from neutral': (weight_file_root + 'neutral_surprise/checkpoints/cyclegan_checkpoints_004', 'G')
 }
+
+image_size = 128
 
 
 def create_gan_model(weight, model):
-    gan_model, _, _ = cyclegan.get_model()
+    gan_model, _, _ = cyclegan.get_model(input_img_size=(image_size, image_size, 3))
     gan_model.load_weights(weight).expect_partial()
     if model == 'G':
         return gan_model.gen_G
@@ -30,7 +31,7 @@ def create_gan_model(weight, model):
 
 def prepare_dataset(emotion):
 
-    df_train = pd.read_pickle('pickles/df_train_ambiguous_85.pkl')
+    df_train = pd.read_pickle('pickles/image_eval/df_train_ambiguous_85.pkl')
 
     def get_dataframe(emotion_name):
         return {
@@ -45,7 +46,6 @@ def prepare_dataset(emotion):
         }[emotion_name]
 
     first_train = get_dataframe(emotion)
-    first_train = first_train[:100]
 
     def prep_fn(img):
         img = img.astype(np.float32)
@@ -60,8 +60,8 @@ def prepare_dataset(emotion):
         x_col='x_col',
         y_col='y_col',
         shuffle=False,
-        target_size=(64, 64),
-        batch_size=500,
+        target_size=(image_size, image_size),
+        batch_size=5000,
         color_mode='rgb',
         class_mode=None
     )
@@ -77,16 +77,16 @@ for (k, v) in weights.items():
     emotion1 = str(k).split(' ')[0]
     emotion2 = str(k).split(' ')[2]
     gan_model = create_gan_model(weight, model)
-    first_train_dataframe, df_first_train = prepare_dataset(emotion2)
-    prediction = gan_model.predict(first_train_dataframe.next())
+    train_generator, df_train_dataframe = prepare_dataset(emotion2)
+    prediction = gan_model.predict(train_generator.next())
     prediction = (prediction * 127.5 + 127.5) / 255
 
     for i, img in enumerate(prediction):
         print('Making Prediction ' + str(j))
-        filename = 'data/cyclegan_images/cyclegan_additional_two_img_%03d.jpg' % j
+        filename = 'data/cyclegan_images/cyclegan_img_%03d.jpg' % j
         matplotlib.pyplot.imsave(filename, img)
-        results_array.append([filename, df_first_train.iloc[i].x_col, emotion1.capitalize()])
+        results_array.append([filename, emotion1.capitalize(), df_train_dataframe.iloc[i].x_col])
         j += 1
 
 df_results = pd.DataFrame(data=results_array, columns=['x_col', 'y_col', 'original_filename'])
-df_results.to_pickle('pickles/df_cyclegan_images_additional_two.pkl')
+df_results.to_pickle('pickles/df_cyclegan_images.pkl')

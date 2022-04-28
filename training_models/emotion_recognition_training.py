@@ -54,11 +54,11 @@ def prepare_dataset(num_class):
     val_datagen = ImageDataGenerator(rescale=1. / 255)
 
     if reduced:
-        df_train = pd.read_pickle('pickles/df_train_ambiguous_85.pkl')
+        df_train = pd.read_pickle('pickles/image_eval/df_train_ambiguous_85.pkl')
         df_train = df_train[df_train['ambiguous'] == False]
-        df_val = pd.read_pickle('pickles/df_val_ambiguous_85.pkl')
+        df_val = pd.read_pickle('pickles/image_eval/df_val_ambiguous_85.pkl')
         df_val = df_val[df_val['ambiguous'] == False]
-        df_train = df_train.drop(df_train[df_train['y_col'] == 'Happiness'].sample(60000).index)
+        df_train = df_train.drop(df_train[df_train['y_col'] == 'Happiness'].sample(40000).index)
     else:
         df_train = pd.read_pickle('pickles/df_train.pkl')
         df_val = pd.read_pickle('pickles/df_val.pkl')
@@ -67,6 +67,14 @@ def prepare_dataset(num_class):
 
     if augmented:
         df_generated = pd.read_pickle('pickles/df_cyclegan_images.pkl')
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Anger'].sample(2000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Contempt'].sample(2000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Disgust'].sample(2000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Fear'].sample(2000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Happiness'].sample(4000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Neutral'].sample(4000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Sadness'].sample(2000).index)
+        df_generated = df_generated.drop(df_generated[df_generated['y_col'] == 'Surprise'].sample(2000).index)
         df_train = pd.concat([df_train, df_generated], ignore_index=True)
 
     if num_class == 5:
@@ -115,9 +123,9 @@ def prepare_dataset(num_class):
 
 
 # Create the model
-def get_model():
+def get_model(image_size, num_classes):
     print('Creating recognizer model')
-    input_shape = (size, size, 3)
+    input_shape = (image_size, image_size, 3)
     weight_decay = 0.01
 
     model = Sequential()
@@ -169,7 +177,7 @@ def get_model():
                     bias_regularizer=l1_l2(0, weight_decay)))
     model.add(BatchNormalization())
 
-    model.add(Dense(classes, activation='softmax'))
+    model.add(Dense(num_classes, activation='softmax'))
 
     model.summary()
     return model
@@ -184,7 +192,6 @@ def save_results(model_type, model_history, val_gen, save_dir):
     val_accuracy = model_history.history['val_accuracy']
     loss = model_history.history['loss']
     val_loss = model_history.history['val_loss']
-    model_type.save_weights(save_dir + '/model.h5')
 
     sns.set()
     fig = plt.figure(0, (12, 4))
@@ -237,9 +244,9 @@ def save_results(model_type, model_history, val_gen, save_dir):
     plt.savefig(save_dir + '/confusion_matrix.png')
     plt.close()
 
-    print(f'total wrong validation predictions: '
-          f'{np.sum(predicted_classes != true_classes)}\n\n')
-    print(classification_report(true_classes, predicted_classes))
+    with open(save_dir + '/results.txt', 'w') as f:
+        results_string = classification_report(true_classes, predicted_classes)
+        f.write(results_string)
 
     # save example faces, with true and predicted labels
     np.random.seed(2)
@@ -268,8 +275,8 @@ def train_model():
     print('Starting pipeline')
     batch_size = 64
 
-    save_dir = 'results/' + str(size) + '_' + 'reduced_' + str(reduced) + '_augmented_' + str(augmented) + '_' + str(
-        classes) + 'cat'
+    save_dir = 'results/recognizer/' + str(size) + '_' + 'reduced_' + str(reduced) + '_augmented_' + str(
+        augmented) + '_' + str(classes) + 'cat'
     os.makedirs(save_dir, exist_ok=True)
 
     optimizer = Adam(learning_rate=0.0001, decay=1e-6)
@@ -291,7 +298,7 @@ def train_model():
         verbose=1
     )
     epochCheckpoint = ModelCheckpoint(
-        save_dir + '/model_checkpoint.h5',
+        save_dir + '/model.h5',
         monitor='val_loss',
         verbose=1,
         save_weights_only=True,
@@ -308,8 +315,12 @@ def train_model():
     num_train = dataset_lengths['train']
     num_val = dataset_lengths['val']
 
-    model = get_model()
+    model = get_model(size, classes)
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+    if classes == 8:
+        model.load_weights('results/recognizer/128_reduced_True_augmented_True_8cat/model.h5')
+    else:
+        model.load_weights('results/recognizer/128_reduced_True_augmented_False_7cat/model.h5')
     history = model.fit(
         train_set,
         class_weight=class_weights,
