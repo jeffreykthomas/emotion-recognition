@@ -64,8 +64,8 @@ dataset.
 def prepare_dataset(emotion_1, emotion_2, image_size=64, num_channels=3, batch_size=256, testing=False,
                     generating=False):
     if generating:
-        df_train = pd.read_pickle('pickles/df_train_ambiguous_85.pkl')
-        df_val = pd.read_pickle('pickles/df_val_ambiguous_85.pkl')
+        df_train = pd.read_pickle('pickles/image_eval/df_train_ambiguous_85.pkl')
+        df_val = pd.read_pickle('pickles/image_eval/df_val_ambiguous_85.pkl')
         df_train = df_train = df_train[df_train['ambiguous'] == False]
         df_val = df_val[df_val['ambiguous'] == False]
     else:
@@ -612,8 +612,8 @@ def train_model():
         generating=True,
         batch_size=batch_size)
 
-    os.makedirs('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/images', exist_ok=True)
-    os.makedirs('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/checkpoints', exist_ok=True)
+    os.makedirs(emotion1 + '_' + emotion2 + '/images', exist_ok=True)
+    os.makedirs(emotion1 + '_' + emotion2 + '/checkpoints', exist_ok=True)
 
     class GANMonitor(keras.callbacks.Callback):
         """A callback to generate and save images after each epoch"""
@@ -623,8 +623,8 @@ def train_model():
 
         def on_epoch_end(self, epoch, logs=None):
             _, ax = plt.subplots(4, 2, figsize=(12, 12))
-            for i, img in enumerate(val_emotion1.take(self.num_img)):
-                prediction = self.model.gen_G(img)[0].numpy()
+            for i, img in enumerate(val_emotion2.take(self.num_img)):
+                prediction = self.model.gen_F(img)[0].numpy()
                 prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
                 img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
 
@@ -635,7 +635,7 @@ def train_model():
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
-            plt.savefig('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/images/generated_img_{epoch}.png'.format(epoch=epoch + 1))
+            plt.savefig('weights/' + emotion1 + '_' + emotion2 + '/images/generated_img_{epoch}.png'.format(epoch=epoch + 1))
             plt.close()
 
     cycle_gan_model.compile(
@@ -648,16 +648,14 @@ def train_model():
     )
     # Callbacks
     plotter = GANMonitor()
-    checkpoint_filepath = '/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/checkpoints/cyclegan_checkpoints_{epoch:03d}'
+    checkpoint_filepath = 'weights/' + emotion1 + '_' + emotion2 + '/checkpoints/cyclegan_checkpoints_{epoch:03d}'
     model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_filepath,
         save_weights_only=True
     )
-    cycle_gan_model.load_weights('/Volumes/Pegasus_R4i/cycle_gan/' + emotion1 + '_' + emotion2 + '/checkpoints/cyclegan_checkpoints_' + '193')
     cycle_gan_model.fit(
         tf.data.Dataset.zip((train_emotion1, train_emotion2)),
         epochs=1000,
-        initial_epoch=193,
         steps_per_epoch=num_train // batch_size,
         callbacks=[plotter, model_checkpoint_callback],
     )

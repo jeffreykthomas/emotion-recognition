@@ -15,7 +15,7 @@ The major advantage of AffectNet is the size, over 290,000 images. The disadvant
  
 For the AffectNet dataset, this means that the [state-of-the-art classifier](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet) is currently 62.425% accuracy (using all 8 emotions in the dataset).
 
-For the code in this project, the images are presumed to be contained in the `data` folder in the root directory. For reproduction, please download the dataset by submitting a request [here]('http://mohammadmahoor.com/affectnet-request-form/').
+For the code in this project, the images are presumed to be contained in the `data` folder in the root directory. For reproduction, please download the dataset by submitting a request [here](http://mohammadmahoor.com/affectnet-request-form/).
 
 ---
 
@@ -123,7 +123,7 @@ While the images looked better than some of the other attempted GANs, the result
 * To train the cycle gan, use:
 
 ```bash
-python3 -m training_models.cyclegan --emotion1 'Happiness' --emotion2 'Sadness'
+python3 -m training_models.cyclegan --emotion1 'happiness' --emotion2 'sadness'
 ```
 
 * Some examples of images created using a cycle gan trained for several hundred epochs:
@@ -437,7 +437,7 @@ python3 -m training_models.emotion_recognition_training -size 128 --classes 8 --
 ## Web App Production Pipeline
 
 Once the best weights have been identified, use the following steps to prepare to deploy the models. To skip the training steps, [go here](https://drive.google.com/file/d/13IPttGQbn06Upkdh51IBqjmLGve7ZFx8/view?usp=sharing) to download weights from my training, plus the face detection weights, and move them to the `public` folder of the web app.
-* First run the following code to prepare the models for the web:
+* If you're using your own training weights, run the following code to prepare the models for the web:
 ```bash
 python3 -m production_pipeline.convert_weights_to_js_model
 ```
@@ -476,4 +476,4 @@ npm run serve
    M Popescu, C Grozea, J Bergstra, J Xie, L Romaszko, B Xu, Z Chuang, and
    Y. Bengio. arXiv 2013.
 * "Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks" Jun-Yan Zhu∗ Taesung Park∗ Phillip Isola Alexei A. Efros, Berkeley AI Research (BAIR) laboratory, UC Berkeley
-* 
+* [Conditional GAN](https://keras.io/examples/generative/conditional_gan/)
